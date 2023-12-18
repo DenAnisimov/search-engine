@@ -1,13 +1,17 @@
 package searchengine.services;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import searchengine.models.Page;
 import searchengine.repository.PageRepository;
 
 import java.util.List;
 
+@Service
 public class PageService {
     private final PageRepository pageRepository;
 
+    @Autowired
     public PageService(PageRepository pageRepository) {
         this.pageRepository = pageRepository;
     }
