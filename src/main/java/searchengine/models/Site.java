@@ -1,9 +1,9 @@
-package searchengine.model;
+package searchengine.models;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import searchengine.model.enums.Status;
+import searchengine.models.enums.Status;
 
 import java.time.LocalDateTime;
 

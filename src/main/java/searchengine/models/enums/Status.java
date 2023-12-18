@@ -1,4 +1,4 @@
-package searchengine.model.enums;
+package searchengine.models.enums;
 
 public enum Status {
     INDEXING, INDEXED, FAILED

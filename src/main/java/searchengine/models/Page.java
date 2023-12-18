@@ -1,4 +1,4 @@
-package searchengine.model;
+package searchengine.models;
 
 import jakarta.persistence.Index;
 import jakarta.persistence.*;
@@ -8,7 +8,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "pages", indexes = @Index(name = "path_index", columnList = "path"))
+@Table(name = "pages", indexes = @Index(name = "path_index", columnList = "path", unique = true))
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +17,7 @@ public class Page {
     @ManyToOne(cascade = CascadeType.ALL)
     private Site site;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String path;
 
     @Column(nullable = false)
