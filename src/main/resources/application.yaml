@@ -3,7 +3,7 @@ server:
   port: 8080
 spring:
   datasource:
-    username: user
+    username: root
     password: PoopokZz147963285
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
   jpa:
