@@ -1,20 +1,19 @@
 package searchengine.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
+import searchengine.config.SitesList;
 import searchengine.models.Site;
+import searchengine.models.enums.Status;
 import searchengine.repository.SiteRepository;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @Service
 public class SiteService {
     private final SiteRepository siteRepository;
-
-    @Autowired
-    public SiteService(SiteRepository siteRepository) {
-        this.siteRepository = siteRepository;
-    }
 
     public List<Site> getAllSites() {
         return siteRepository.findAll();
