@@ -59,7 +59,6 @@ public class SiteCrawlService {
             page.setPath(document.baseUri());
             page.setContent(document.text());
             pageRepository.save(page);
-            System.out.println("Processing and saving page: " + document.title());
         }
     }
 }
