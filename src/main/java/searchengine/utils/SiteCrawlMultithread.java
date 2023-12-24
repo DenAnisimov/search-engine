@@ -1,9 +1,8 @@
 package searchengine.utils;
+
 import searchengine.models.Site;
-import searchengine.services.PageService;
 
 import java.util.concurrent.ForkJoinPool;
-
 
 public class SiteCrawlMultithread extends Thread {
     private Site site;
