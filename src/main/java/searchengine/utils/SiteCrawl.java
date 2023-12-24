@@ -5,19 +5,24 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import searchengine.models.Page;
 import searchengine.models.Site;
-import searchengine.services.PageService;
+import searchengine.repository.PageRepository;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.RecursiveAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+@Component
 public class SiteCrawl extends RecursiveAction {
-    private final PageService pageService;
+    @Autowired
+    private PageRepository pageRepository;
     private String rootLink;
     private Site site;
     private static HashSet<String> hrefs = new HashSet<>();
@@ -51,6 +56,7 @@ public class SiteCrawl extends RecursiveAction {
         page.setCode(getStatusCode(rootLink));
         page.setContent(document.text());
         page.setPath(rootLink);
+        pageRepository.save(page);
 
         Pattern partialLink = Pattern.compile("^[\\/][a-zA-z \\/]{1,}[\\/]$");
 
