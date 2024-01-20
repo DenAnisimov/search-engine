@@ -59,13 +59,11 @@ public class IndexingService {
         List<Future<?>> futures = new ArrayList<>();
 
         siteList.forEach(siteConfig -> {
-            Site siteDB = Site.builder()
-                    .name(siteConfig.getName())
-                    .url(siteConfig.getUrl())
-                    .status(Status.INDEXING)
-                    .statusTime(LocalDateTime.now())
-                    .build();
-
+            Site siteDB = new Site();
+            siteDB.setName(siteConfig.getName());
+            siteDB.setUrl(siteConfig.getUrl());
+            siteDB.setStatusTime(LocalDateTime.now());
+            siteDB.setStatus(Status.INDEXING);
             try {
                 siteRepository.save(siteDB);
 
@@ -81,9 +79,12 @@ public class IndexingService {
 
 
             } catch (Exception ex) {
-                siteDB.builder().lastError(ex.getMessage()).build();
+                siteDB.setLastError(ex.getMessage());
+                siteDB.setStatus(Status.INDEXED);
                 siteRepository.save(siteDB);
             }
+            siteDB.setStatus(Status.INDEXED);
+            siteRepository.save(siteDB);
         });
 
         for (Future<?> future : futures) {
