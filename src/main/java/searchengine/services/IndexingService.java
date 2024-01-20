@@ -1,74 +1,125 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.dto.site.SiteDTO;
+import searchengine.mapper.SiteMapper;
 import searchengine.models.Site;
 import searchengine.models.enums.Status;
+import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.utils.SiteCrawlMultithread;
+import searchengine.utils.SiteCrawl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 public class IndexingService {
+    private final SiteMapper siteMapper;
     private final SiteRepository siteRepository;
-
+    private final StorageService storageService;
+    private final PageRepository pageRepository;
     private final SitesList sites;
+    private volatile boolean isIndexingRunning = false;
 
-    private IndexingResponse indexingResponse;
-
-    // Запустить индексацию отдельно от главного потока (асинхроно) async
+    @Async
     public IndexingResponse startIndexingSites() {
-        List<searchengine.config.Site> siteList = sites.getSites();
-        indexingResponse = new IndexingResponse();
+        deleteSitesAndPages();
 
-        // IF если индексация запущена, то indexingResponse.setResult(false); //
-        //                indexingResponse.setError(Индексация уже запущена); //
-        // return response
-        // если не запущена, то запускаем и возвращаем true
+        synchronized (this) {
+            if (isIndexingRunning) {
+                IndexingResponse response = new IndexingResponse();
+                response.setResult(false);
+                response.setError("Индексация уже запущена");
+                return response;
+            }
+            isIndexingRunning = true;
+        }
+
+
+        IndexingResponse indexingResponse = new IndexingResponse();
+        List<searchengine.config.Site> siteList = sites.getSites();
+
         if (siteList == null) {
             indexingResponse.setResult(false);
             indexingResponse.setError("Список сайтов отсутствует");
-        } else {
+            isIndexingRunning = false;
+            return indexingResponse;
+        }
 
-            for (searchengine.config.Site site : siteList) {
-                Site siteDB = new Site();
-                siteRepository.delete(siteDB);
-                try {
-                    siteDB.setName(site.getName());
-                    siteDB.setUrl(site.getUrl());
-                    siteDB.setStatus(Status.INDEXING);
-                    siteDB.setStatusTime(LocalDateTime.now());
+        List<Future<?>> futures = new ArrayList<>();
 
-                    SiteCrawlMultithread siteCrawlMultithread = new SiteCrawlMultithread(siteDB);
-                    siteCrawlMultithread.start();
+        siteList.forEach(siteConfig -> {
+            Site siteDB = Site.builder()
+                    .name(siteConfig.getName())
+                    .url(siteConfig.getUrl())
+                    .status(Status.INDEXING)
+                    .statusTime(LocalDateTime.now())
+                    .build();
 
-                    siteRepository.save(siteDB);
+            try {
+                siteRepository.save(siteDB);
 
-                    indexingResponse.setResult(true);
-                    return indexingResponse;
-                } catch (Exception ex) {
-                    siteDB.setLastError(ex.toString());
-                    siteRepository.save(siteDB);
+                SiteDTO siteDTO = siteMapper.mapToDTO(siteDB);
 
-                    indexingResponse.setResult(false);
-                    indexingResponse.setError(ex.toString());
-                    return indexingResponse;
-                }
+                ExecutorService executorService = new ForkJoinPool();
+                Future<?> submit = executorService.submit(() -> {
+                    SiteCrawl siteCrawl = new SiteCrawl(siteDTO, siteDTO.getUrl());
+                    new ForkJoinPool().invoke(siteCrawl);
+                });
+
+                futures.add(submit);
+
+
+            } catch (Exception ex) {
+                siteDB.builder().lastError(ex.getMessage()).build();
+                siteRepository.save(siteDB);
+            }
+        });
+
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
         }
+
+        storageService.save(SiteCrawl.getPageDTOQueue());
+
+        indexingResponse.setResult(true);
+        isIndexingRunning = false;
         return indexingResponse;
     }
 
-    public void stopIndexing() {
-
+    @Async
+    public IndexingResponse stopIndexing() {
+        synchronized (this) {
+            IndexingResponse response = new IndexingResponse();
+            if (!isIndexingRunning) {
+                response.setError("Индексация не запущена");
+                response.setResult(false);
+            } else {
+                SiteCrawl.stopCrawling();
+                response.setResult(true);
+            }
+            return response;
+        }
     }
 
-    private void deleteSiteData(Site site) {
-        siteRepository.deleteById(site.getId());
+    private void deleteSitesAndPages() {
+        pageRepository.deleteAll();
+        siteRepository.deleteAll();
     }
 }
