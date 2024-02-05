@@ -11,6 +11,8 @@ import searchengine.dto.site.SiteDTO;
 @SuperBuilder
 @ToString
 public class PageDTO {
+    private int id;
+
     private SiteDTO siteDTO;
 
     private String path;
