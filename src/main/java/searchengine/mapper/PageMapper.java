@@ -6,6 +6,9 @@ import searchengine.dto.page.PageDTO;
 import searchengine.models.Page;
 import searchengine.repository.SiteRepository;
 
+import java.util.LinkedList;
+import java.util.List;
+
 @Component
 @RequiredArgsConstructor
 public class PageMapper {
@@ -13,22 +16,12 @@ public class PageMapper {
     private final SiteMapper siteMapper;
 
     public Page mapToEntity(PageDTO pageDTO) {
-        Page page = Page.builder()
+        return Page.builder()
+                .id(pageDTO.getId())
                 .path(pageDTO.getPath())
                 .code(pageDTO.getCode())
                 .site(siteRepository.getReferenceById(pageDTO.getSiteDTO().getId()))
                 .content(pageDTO.getContent())
                 .build();
-        return page;
-    }
-
-    public PageDTO mapToDTO(Page page) {
-        PageDTO pageDTO = PageDTO.builder()
-                .path(page.getPath())
-                .code(page.getCode())
-                .siteDTO(siteMapper.mapToDTO(page.getSite()))
-                .content(page.getContent())
-                .build();
-        return pageDTO;
     }
 }
