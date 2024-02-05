@@ -16,7 +16,7 @@ public class Page {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.MERGE)
     private Site site;
 
     @Column(nullable = false)
