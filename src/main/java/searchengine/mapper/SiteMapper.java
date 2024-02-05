@@ -6,19 +6,8 @@ import searchengine.models.Site;
 
 @Component
 public class SiteMapper {
-    public Site mapToEntity(SiteDTO siteDTO) {
-        Site site = new Site();
-        site.setId(siteDTO.getId());
-        site.setName(siteDTO.getName());
-        site.setUrl(siteDTO.getUrl());
-        site.setStatus(siteDTO.getStatus());
-        site.setStatusTime(siteDTO.getStatusTime());
-        site.setLastError(siteDTO.getLastError());
-        return site;
-    }
-
     public SiteDTO mapToDTO(Site site) {
-        SiteDTO siteDTO = SiteDTO.builder()
+        return SiteDTO.builder()
                 .id(site.getId())
                 .name(site.getName())
                 .url(site.getUrl())
@@ -26,6 +15,5 @@ public class SiteMapper {
                 .statusTime(site.getStatusTime())
                 .lastError(site.getLastError())
                 .build();
-        return siteDTO;
     }
 }
