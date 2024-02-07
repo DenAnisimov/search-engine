@@ -1,5 +1,8 @@
 package searchengine.dto.search;
 
+import lombok.Data;
+
+@Data
 public class DetailedSearchItem {
     private String site;
     private String siteName;

@@ -1,6 +1,13 @@
 package searchengine.dto.search;
 
+import lombok.Data;
+
+import java.util.List;
+
+@Data
 public class SearchResponse {
-    private TotalSearch totalSearch;
-    private SearchData searchData;
+    private boolean result;
+    private String error;
+    private int count;
+    private List<DetailedSearchItem> data;
 }
