@@ -16,4 +16,15 @@ public class SiteMapper {
                 .lastError(site.getLastError())
                 .build();
     }
+
+    public Site mapToEntity(SiteDTO siteDTO) {
+        return Site.builder()
+                .id(siteDTO.getId())
+                .name(siteDTO.getName())
+                .url(siteDTO.getUrl())
+                .status(siteDTO.getStatus())
+                .statusTime(siteDTO.getStatusTime())
+                .lastError(siteDTO.getLastError())
+                .build();
+    }
 }
