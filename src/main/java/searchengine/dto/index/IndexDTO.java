@@ -13,7 +13,7 @@ import searchengine.models.Page;
 @SuperBuilder
 @RequiredArgsConstructor
 public class IndexDTO {
-    private int id;
+    private Integer id;
 
     private PageDTO pageDTO;
 
