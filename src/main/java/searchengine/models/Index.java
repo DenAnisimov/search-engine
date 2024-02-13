@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.Cascade;
 
 @Entity
 @Getter
@@ -14,7 +13,7 @@ import org.hibernate.annotations.Cascade;
 public class Index {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @ManyToOne(cascade = CascadeType.ALL)
     private Page page;
