@@ -6,14 +6,10 @@ import searchengine.dto.page.PageDTO;
 import searchengine.models.Page;
 import searchengine.repository.SiteRepository;
 
-import java.util.LinkedList;
-import java.util.List;
-
 @Component
 @RequiredArgsConstructor
 public class PageMapper {
     private final SiteRepository siteRepository;
-    private final SiteMapper siteMapper;
 
     public Page mapToEntity(PageDTO pageDTO) {
         return Page.builder()
