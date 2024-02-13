@@ -8,4 +8,7 @@ import java.util.List;
 
 public interface LemmaRepository extends JpaRepository<Lemma, Integer> {
     List<Lemma> findAllBySite(Site site);
+
+    Lemma findByLemmaAndSite(String lemma, Site site);
 }
+
