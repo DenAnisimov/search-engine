@@ -25,6 +25,7 @@ public class SiteProcess {
     private final SiteRepository siteRepository;
     private final StorageComponent storageComponent;
     private final SitesList sites;
+
     @Async
     public void start() {
         List<Site> siteList = sites.getSites();
@@ -50,7 +51,7 @@ public class SiteProcess {
 
                 ExecutorService executorService = new ForkJoinPool();
                 Future<?> submit = executorService.submit(() -> {
-                    SiteCrawl siteCrawl = new SiteCrawl(siteDTO, siteDTO.getUrl());
+                    SiteCrawl siteCrawl = new SiteCrawl(siteDTO.getId(), siteDTO.getUrl());
                     new ForkJoinPool().invoke(siteCrawl);
                 });
                 futures.add(submit);
