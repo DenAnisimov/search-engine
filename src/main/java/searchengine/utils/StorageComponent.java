@@ -129,8 +129,7 @@ public class StorageComponent {
         for (LemmaDTO lemmaToAdd : lemmasToAdd) {
             boolean found = false;
             for (LemmaDTO lemma : lemmas) {
-                if (lemma.getLemma().equals(lemmaToAdd.getLemma()) &&
-                        lemma.getSiteDTO().getId() == lemmaToAdd.getSiteDTO().getId()) {
+                if (lemma.isLemmaBelongToSite(lemmaToAdd)) {
                     lemma.setFrequency(lemma.getFrequency() + lemmaToAdd.getFrequency());
                     found = true;
                     break;

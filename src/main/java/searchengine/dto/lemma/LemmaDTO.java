@@ -1,13 +1,10 @@
 package searchengine.dto.lemma;
 
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import searchengine.dto.site.SiteDTO;
-import searchengine.models.Lemma;
-import searchengine.models.Site;
 
 @Getter
 @SuperBuilder
@@ -23,7 +20,8 @@ public class LemmaDTO {
     private int frequency;
 
     /* todo: Дописать логику*/
-    private boolean isLemmaBelongToSite(Lemma lemma) {
-        return false;
+    public boolean isLemmaBelongToSite(LemmaDTO lemma) {
+        return this.lemma.equals(lemma.getLemma()) &&
+                this.siteDTO.getId() == lemma.getSiteDTO().getId();
     }
 }
