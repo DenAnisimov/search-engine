@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import searchengine.models.enums.Status;
 
 import java.time.LocalDateTime;
@@ -11,12 +12,13 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
+@SuperBuilder
 @Table(name = "sites")
 @RequiredArgsConstructor
 public class Site {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

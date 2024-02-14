@@ -7,6 +7,8 @@ import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
+import searchengine.models.Site;
+import searchengine.models.enums.Status;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
@@ -30,7 +32,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         total.setIndexing(true);
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
-        for (searchengine.models.Site site : siteRepository.findAll()) {
+        for (Site site : siteRepository.findAll()) {
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
@@ -38,7 +40,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             int lemmasCount = lemmaRepository.findAllBySite(site).size();
             item.setPages(pagesCount);
             item.setLemmas(lemmasCount);
-            item.setStatus(site.getStatus().toString());
+            item.setStatus(hasSiteData(site) ? Status.INDEXED.toString() : Status.FAILED.toString());
             item.setStatusTime(site.getStatusTime().toLocalTime().toNanoOfDay());
             detailed.add(item);
             total.setPages(total.getPages() + pagesCount);
@@ -52,5 +54,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         response.setStatistics(data);
         response.setResult(true);
         return response;
+    }
+
+    private boolean hasSiteData(Site site) {
+        return pageRepository.findAll().stream().anyMatch(page -> page.getSite().equals(site));
     }
 }

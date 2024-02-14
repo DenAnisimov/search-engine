@@ -1,10 +1,17 @@
 package searchengine.utils;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.lucene.analysis.CharArrayMap;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import searchengine.dto.index.IndexDTO;
+import searchengine.dto.lemma.LemmaDTO;
 import searchengine.dto.page.PageDTO;
+import searchengine.mapper.IndexMapper;
+import searchengine.mapper.LemmaMapper;
 import searchengine.mapper.PageMapper;
+import searchengine.mapper.SiteMapper;
 import searchengine.models.Index;
 import searchengine.models.Lemma;
 import searchengine.models.Page;
@@ -13,9 +20,7 @@ import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Component
@@ -25,31 +30,61 @@ public class StorageComponent {
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
     private final PageMapper pageMapper;
+    private final IndexMapper indexMapper;
+    private final LemmaMapper lemmaMapper;
     private final ExtractedComponent extractedComponent;
 
     @Transactional
     public void saveAll(Queue<PageDTO> pageDTOQueue) {
-        int batchSize = 100;
-        int counter = 0;
-        List<Index> indexes = new LinkedList<>();
+        List<IndexDTO> indexes = new ArrayList<>();
+        List<LemmaDTO> lemmas = new ArrayList<>();
+        List<Page> pages = new ArrayList<>();
         while (!pageDTOQueue.isEmpty()) {
-            Page page = pageMapper.mapToEntity(pageDTOQueue.poll());
-            pageRepository.save(page);
+            PageDTO page = pageDTOQueue.poll();
 
-            List<Lemma> lemmas = lemmaRepository.saveAllAndFlush(extractedComponent.getLemmas(page));
+            pages.add(pageMapper.mapToEntity(page));
 
-            indexes.addAll(extractedComponent.getIndexes(lemmas, page));
+            List<LemmaDTO> lemmasToAdd = extractedComponent.getLemmas(page);
 
-            if (counter == batchSize || pageDTOQueue.isEmpty()) {
-                pageRepository.flush();
-
-                indexRepository.saveAllAndFlush(indexes);
-
-                indexes.clear();
-            }
-
-            counter++;
+            addLemmaData(lemmas, lemmasToAdd);
+            indexes.addAll(extractedComponent.getIndexes(lemmasToAdd, page));
         }
+
+        saveInBatch(pages, pageRepository);
+
+        saveInBatch(lemmaMapper.mapToEntities(lemmas), lemmaRepository);
+
+        saveInBatch(indexMapper.mapToEntities(indexes), indexRepository);
+    }
+
+    @Transactional
+    public void savePage(PageDTO page) {
+        pageRepository.save(pageMapper.mapToEntity(page));
+        saveAllDataLinksWithPage(page);
+    }
+
+    private void saveAllDataLinksWithPage(PageDTO page) {
+        List<LemmaDTO> lemmasFromPage = extractedComponent.getLemmas(page);
+        List<Lemma> lemmas = lemmaRepository.findAll();
+
+        if (lemmas.isEmpty()) {
+            saveInBatch(lemmaMapper.mapToEntities(lemmasFromPage), lemmaRepository);
+        } else {
+            for (LemmaDTO lemmaFromPage : lemmasFromPage) {
+                for (Lemma lemma : lemmas) {
+                    if (lemmaFromPage.getLemma().equals(lemma.getLemma())) {
+                        lemma.setFrequency(lemma.getFrequency() + lemmaFromPage.getFrequency());
+                    }
+                }
+            }
+            saveInBatch(lemmas, lemmaRepository);
+        }
+
+
+
+        List<IndexDTO> indexesFromPage = extractedComponent.getIndexes(lemmasFromPage, page);
+
+        saveInBatch(indexMapper.mapToEntities(indexesFromPage), indexRepository);
     }
 
     @Transactional
@@ -62,7 +97,57 @@ public class StorageComponent {
 
     @Transactional
     public void deletePage(Page page) {
-        indexRepository.deleteAllByPage(page);
+        deleteAllDataLinksWithPage(page);
         pageRepository.deleteById(page.getId());
+    }
+
+    private void deleteAllDataLinksWithPage(Page page) {
+        HashMap<String, Integer> lemmasFromIndex = new HashMap<>();
+        List<Index> indexes = indexRepository.findAll().stream().filter(i -> i.getPage().getPath().equals(page.getPath())).toList();
+
+        for (Index index : indexes) {
+            lemmasFromIndex.put(index.getLemma().getLemma(), (int) index.getLemmaRank());
+        }
+
+        List<Lemma> lemmas = lemmaRepository.findAll().stream().filter(l -> l.getSite().equals(page.getSite())).toList();
+
+        for (Map.Entry<String, Integer> lemmaFromIndex : lemmasFromIndex.entrySet()) {
+            for (Lemma lemma : lemmas) {
+                if (lemma.getLemma().equals(lemmaFromIndex.getKey())) {
+                    lemma.setFrequency(lemma.getFrequency() - lemmaFromIndex.getValue());
+                    break;
+                }
+            }
+        }
+
+        lemmaRepository.saveAll(lemmas);
+
+        indexRepository.deleteAllByPage(page);
+    }
+
+    private void addLemmaData(List<LemmaDTO> lemmas, List<LemmaDTO> lemmasToAdd) {
+        for (LemmaDTO lemmaToAdd : lemmasToAdd) {
+            boolean found = false;
+            for (LemmaDTO lemma : lemmas) {
+                if (lemma.getLemma().equals(lemmaToAdd.getLemma()) &&
+                        lemma.getSiteDTO().getId() == lemmaToAdd.getSiteDTO().getId()) {
+                    lemma.setFrequency(lemma.getFrequency() + lemmaToAdd.getFrequency());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                lemmas.add(lemmaToAdd);
+            }
+        }
+    }
+
+    private <T, ID> void saveInBatch(List<T> entities, JpaRepository<T, ID> repository) {
+        int batchSize = 100;
+        for (int i = 0; i < entities.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, entities.size());
+            List<T> sublist = entities.subList(i, endIndex);
+            repository.saveAll(sublist);
+        }
     }
 }

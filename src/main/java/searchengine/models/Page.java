@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @ManyToOne(cascade = CascadeType.MERGE)
     private Site site;

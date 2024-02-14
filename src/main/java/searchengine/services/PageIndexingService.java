@@ -4,32 +4,22 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
-import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
-import searchengine.models.Index;
-import searchengine.models.Lemma;
+import searchengine.dto.page.PageDTO;
+import searchengine.mapper.SiteMapper;
 import searchengine.models.Page;
-import searchengine.repository.IndexRepository;
-import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
-import searchengine.utils.ExtractedComponent;
 import searchengine.utils.PathUtil;
 import searchengine.utils.SiteConnection;
 import searchengine.utils.StorageComponent;
-
-import java.util.LinkedList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PageIndexingService {
     private final PageRepository pageRepository;
-    private final ExtractedComponent extractedComponent;
     private final SiteRepository siteRepository;
-    private final SitesList sites;
-    private final LemmaRepository lemmaRepository;
-    private final IndexRepository indexRepository;
+    private final SiteMapper siteMapper;
     private final StorageComponent storageComponent;
 
     public IndexingResponse indexPage(String path) {
@@ -41,7 +31,7 @@ public class PageIndexingService {
         }
         String url = PathUtil.getOriginalPath(path);
 
-        if (sites.getSites().stream().noneMatch(s -> s.getUrl().equals(url))) {
+        if (siteRepository.findAll().stream().noneMatch(s -> s.getUrl().equals(url))) {
             response.setResult(false);
             response.setError("Данная страница находится за пределами сайтов," +
                     "указанных в конфигурационном файле");
@@ -55,20 +45,19 @@ public class PageIndexingService {
                 storageComponent.deletePage(page);
             }
 
-                page = Page.builder()
-                        .site(siteRepository.findByUrl(url))
-                        .code(getStatusCode(path))
-                        .content(siteConnection.getDocument().text())
-                        .path(path)
-                        .build();
-                pageRepository.saveAndFlush(page);
+            PageDTO pageDTO = PageDTO.builder()
+                    .siteDTO(siteMapper.mapToDTO(siteRepository.findByUrl(url)))
+                    .code(getStatusCode(path))
+                    .content(siteConnection.getDocument().text())
+                    .path(path)
+                    .build();
 
-                List<Lemma> lemmas = lemmaRepository.saveAllAndFlush(extractedComponent.getLemmas(page));
-                indexRepository.saveAllAndFlush(extractedComponent.getIndexes(lemmas, page));
+            storageComponent.savePage(pageDTO);
+
         }
+        response.setResult(true);
         return new IndexingResponse();
     }
-
 
 
     private int getStatusCode(String path) {
