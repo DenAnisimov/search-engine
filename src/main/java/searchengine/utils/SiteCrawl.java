@@ -43,6 +43,8 @@ public class SiteCrawl extends RecursiveAction {
             return;
         }
 
+        savePageDTOData(document, rootLink);
+
         Elements links = document.select("a");
 
         for (Element link : links) {
@@ -53,8 +55,6 @@ public class SiteCrawl extends RecursiveAction {
                 if (PathUtil.isOriginalPathFind(rootLink)) {
                     String originalLink = PathUtil.getOriginalPath(rootLink);
                     hrefs.add(href);
-
-                    savePageDTOData(document, originalLink + href);
                     createAndForkNewTask(originalLink + href);
                 }
             }
