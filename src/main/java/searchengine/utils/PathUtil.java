@@ -30,4 +30,14 @@ public class PathUtil {
             return "";
         }
     }
+
+    public static String getPartialPath(String path) {
+        Pattern pattern = Pattern.compile(REGEX_ORIGINAL_PATH);
+        Matcher matcher = pattern.matcher(path);
+        if (matcher.find()) {
+            return path.substring(matcher.end());
+        } else {
+            return "";
+        }
+    }
 }
