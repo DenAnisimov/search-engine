@@ -42,7 +42,7 @@ public class ApiController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<SearchResponse> search() {
-        return ResponseEntity.ok(searchService.search("Декабрь февраль россия украина"));
+    public ResponseEntity<SearchResponse> search(@RequestParam String query, @RequestParam(required = false) String site) {
+        return ResponseEntity.ok(searchService.search(query, site));
     }
 }
