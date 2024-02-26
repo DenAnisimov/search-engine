@@ -3,10 +3,11 @@ package searchengine.utils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.site.SiteDTO;
 import searchengine.mapper.SiteMapper;
+import searchengine.mapper.SiteMapstruct;
+import searchengine.models.Site;
 import searchengine.models.enums.Status;
 import searchengine.repository.SiteRepository;
 
@@ -22,13 +23,14 @@ import java.util.concurrent.Future;
 @Component
 public class SiteProcess {
     private final SiteMapper siteMapper;
+    private final SiteMapstruct siteMapstruct;
     private final SiteRepository siteRepository;
     private final StorageComponent storageComponent;
     private final SitesList sites;
 
     @Async
     public void start() {
-        List<Site> siteList = sites.getSites();
+        List<searchengine.config.Site> siteList = sites.getSites();
 
         if (siteList == null) {
             throw new NullPointerException("Список сайтов отсутствует");
@@ -39,7 +41,7 @@ public class SiteProcess {
         List<Future<?>> futures = new ArrayList<>();
 
         siteList.forEach(siteConfig -> {
-            searchengine.models.Site siteDB = new searchengine.models.Site();
+            Site siteDB = new Site();
             siteDB.setName(siteConfig.getName());
             siteDB.setUrl(siteConfig.getUrl());
             siteDB.setStatusTime(LocalDateTime.now());
@@ -47,11 +49,11 @@ public class SiteProcess {
             try {
                 siteRepository.save(siteDB);
 
-                SiteDTO siteDTO = siteMapper.mapToDTO(siteDB);
+                SiteDTO siteDTO = siteMapstruct.toDTO(siteDB);
 
                 ExecutorService executorService = new ForkJoinPool();
                 Future<?> submit = executorService.submit(() -> {
-                    SiteCrawl siteCrawl = new SiteCrawl(siteDTO.getId(), siteDTO.getUrl());
+                    SiteCrawl siteCrawl = new SiteCrawl(siteDTO, siteDTO.getUrl());
                     new ForkJoinPool().invoke(siteCrawl);
                 });
                 futures.add(submit);

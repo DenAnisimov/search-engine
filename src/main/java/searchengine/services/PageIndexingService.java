@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.page.PageDTO;
 import searchengine.mapper.SiteMapper;
+import searchengine.mapper.SiteMapstruct;
 import searchengine.models.Page;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
@@ -20,6 +21,7 @@ public class PageIndexingService {
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
     private final SiteMapper siteMapper;
+    private final SiteMapstruct siteMapstruct;
     private final StorageComponent storageComponent;
 
     public IndexingResponse indexPage(String path) {
@@ -46,7 +48,7 @@ public class PageIndexingService {
             }
 
             PageDTO pageDTO = PageDTO.builder()
-                    .siteDTO(siteMapper.mapToDTO(siteRepository.findByUrl(url)))
+                    .siteDTO(siteMapstruct.toDTO(siteRepository.findByUrl(url)))
                     .code(getStatusCode(path))
                     .content(siteConnection.getDocument().text())
                     .path(path)

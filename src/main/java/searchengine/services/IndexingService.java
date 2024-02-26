@@ -1,23 +1,9 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import searchengine.config.SitesList;
 import searchengine.dto.indexing.IndexingResponse;
-import searchengine.dto.site.SiteDTO;
-import searchengine.mapper.SiteMapper;
-import searchengine.models.Site;
-import searchengine.models.enums.Status;
-import searchengine.repository.SiteRepository;
-import searchengine.utils.SiteCrawl;
-import searchengine.utils.StorageComponent;
 import searchengine.utils.SiteProcess;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
 
 @Service
 @RequiredArgsConstructor

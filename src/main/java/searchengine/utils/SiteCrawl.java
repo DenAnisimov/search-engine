@@ -15,13 +15,13 @@ public class SiteCrawl extends RecursiveAction {
     private static Queue<PageDTO> pageDTOQueue = new ConcurrentLinkedQueue<>();
     private static boolean crawling = true;
     private String rootLink;
-    private int siteId;
+    private SiteDTO siteDTO;
     public static HashSet<String> hrefs = new HashSet<>();
     private SiteConnection siteConnection;
 
 
-    public SiteCrawl(int siteId, String rootLink) {
-        this.siteId = siteId;
+    public SiteCrawl(SiteDTO siteDTO, String rootLink) {
+        this.siteDTO = siteDTO;
 
         this.rootLink = rootLink;
         siteConnection = new SiteConnection(rootLink);
@@ -62,9 +62,6 @@ public class SiteCrawl extends RecursiveAction {
     }
 
     private void savePageDTOData(Document document, String path) {
-        SiteDTO siteDTO = SiteDTO.builder()
-                .id(siteId)
-                .build();
 
         PageDTO pageDTO = PageDTO.builder()
                 .siteDTO(siteDTO)
@@ -77,7 +74,7 @@ public class SiteCrawl extends RecursiveAction {
 
     private void createAndForkNewTask(String href) {
         hrefs.add(href);
-        SiteCrawl task = new SiteCrawl(siteId, href);
+        SiteCrawl task = new SiteCrawl(siteDTO, href);
         task.fork();
     }
 

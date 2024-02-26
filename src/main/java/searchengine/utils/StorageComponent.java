@@ -1,17 +1,13 @@
 package searchengine.utils;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.lucene.analysis.CharArrayMap;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import searchengine.dto.index.IndexDTO;
 import searchengine.dto.lemma.LemmaDTO;
 import searchengine.dto.page.PageDTO;
-import searchengine.mapper.IndexMapper;
-import searchengine.mapper.LemmaMapper;
-import searchengine.mapper.PageMapper;
-import searchengine.mapper.SiteMapper;
+import searchengine.mapper.*;
 import searchengine.models.Index;
 import searchengine.models.Lemma;
 import searchengine.models.Page;
@@ -29,6 +25,9 @@ public class StorageComponent {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
+    private final PageMapstruct pageMapstruct;
+    private final LemmaMapstruct lemmaMapstruct;
+    private final IndexMapstruct indexMapstruct;
     private final PageMapper pageMapper;
     private final IndexMapper indexMapper;
     private final LemmaMapper lemmaMapper;
@@ -42,24 +41,22 @@ public class StorageComponent {
         while (!pageDTOQueue.isEmpty()) {
             PageDTO page = pageDTOQueue.poll();
 
-            pages.add(pageMapper.mapToEntity(page));
-
+            pages.add(pageMapstruct.toModel(page));
             List<LemmaDTO> lemmasToAdd = extractedComponent.getLemmas(page);
 
             addLemmaData(lemmas, lemmasToAdd);
             indexes.addAll(extractedComponent.getIndexes(lemmasToAdd, page));
         }
-
         saveInBatch(pages, pageRepository);
 
-        saveInBatch(lemmaMapper.mapToEntities(lemmas), lemmaRepository);
+        saveInBatch(lemmaMapstruct.toModels(lemmas), lemmaRepository);
 
-        saveInBatch(indexMapper.mapToEntities(indexes), indexRepository);
+        saveInBatch(indexMapstruct.toModels(indexes), indexRepository);
     }
 
     @Transactional
     public void savePage(PageDTO page) {
-        pageRepository.save(pageMapper.mapToEntity(page));
+        pageRepository.save(pageMapstruct.toModel(page));
         saveAllDataLinksWithPage(page);
     }
 
@@ -68,7 +65,7 @@ public class StorageComponent {
         List<Lemma> lemmas = lemmaRepository.findAll();
 
         if (lemmas.isEmpty()) {
-            saveInBatch(lemmaMapper.mapToEntities(lemmasFromPage), lemmaRepository);
+            saveInBatch(lemmaMapstruct.toModels(lemmasFromPage), lemmaRepository);
         } else {
             for (LemmaDTO lemmaFromPage : lemmasFromPage) {
                 for (Lemma lemma : lemmas) {
@@ -84,7 +81,7 @@ public class StorageComponent {
 
         List<IndexDTO> indexesFromPage = extractedComponent.getIndexes(lemmasFromPage, page);
 
-        saveInBatch(indexMapper.mapToEntities(indexesFromPage), indexRepository);
+        saveInBatch(indexMapstruct.toModels(indexesFromPage), indexRepository);
     }
 
     @Transactional
@@ -146,7 +143,7 @@ public class StorageComponent {
         for (int i = 0; i < entities.size(); i += batchSize) {
             int endIndex = Math.min(i + batchSize, entities.size());
             List<T> sublist = entities.subList(i, endIndex);
-            repository.saveAll(sublist);
+            repository.saveAllAndFlush(sublist);
         }
     }
 }
