@@ -28,30 +28,38 @@ public class StorageComponent {
     private final PageMapstruct pageMapstruct;
     private final LemmaMapstruct lemmaMapstruct;
     private final IndexMapstruct indexMapstruct;
-    private final PageMapper pageMapper;
-    private final IndexMapper indexMapper;
-    private final LemmaMapper lemmaMapper;
     private final ExtractedComponent extractedComponent;
 
     @Transactional
     public void saveAll(Queue<PageDTO> pageDTOQueue) {
-        List<IndexDTO> indexes = new ArrayList<>();
-        List<LemmaDTO> lemmas = new ArrayList<>();
-        List<Page> pages = new ArrayList<>();
-        while (!pageDTOQueue.isEmpty()) {
-            PageDTO page = pageDTOQueue.poll();
+        List<PageDTO> pages = new ArrayList<>(pageDTOQueue);
+        List<LemmaDTO> lemmas = extractedComponent.getLemmas(pages);
+        List<IndexDTO> indexes = extractedComponent.getIndexes(pages, lemmas);
 
-            pages.add(pageMapstruct.toModel(page));
-            List<LemmaDTO> lemmasToAdd = extractedComponent.getLemmas(page);
+        List<Page> pageEntities = pageMapstruct.toModels(pages);
+        pageRepository.saveAll(pageEntities);
 
-            addLemmaData(lemmas, lemmasToAdd);
-            indexes.addAll(extractedComponent.getIndexes(lemmasToAdd, page));
+        List<Lemma> lemmaEntities = lemmaMapstruct.toModels(lemmas);
+        lemmaRepository.saveAll(lemmaEntities);
+
+        List<Index> indexEntities = indexMapstruct.toModels(indexes);
+        indexRepository.saveAll(indexEntities);
+    }
+
+    private void addLemmaData(List<LemmaDTO> lemmas, List<LemmaDTO> lemmasToAdd) {
+        for (LemmaDTO lemmaToAdd : lemmasToAdd) {
+            boolean found = false;
+            for (LemmaDTO lemma : lemmas) {
+                if (lemma.isLemmaBelongToSite(lemmaToAdd)) {
+                    lemma.setFrequency(lemma.getFrequency() + lemmaToAdd.getFrequency());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                lemmas.add(lemmaToAdd);
+            }
         }
-        saveInBatch(pages, pageRepository);
-
-        saveInBatch(lemmaMapstruct.toModels(lemmas), lemmaRepository);
-
-        saveInBatch(indexMapstruct.toModels(indexes), indexRepository);
     }
 
     @Transactional
@@ -61,7 +69,7 @@ public class StorageComponent {
     }
 
     private void saveAllDataLinksWithPage(PageDTO page) {
-        List<LemmaDTO> lemmasFromPage = extractedComponent.getLemmas(page);
+        /*List<LemmaDTO> lemmasFromPage = extractedComponent.getLemmas(page);
         List<Lemma> lemmas = lemmaRepository.findAll();
 
         if (lemmas.isEmpty()) {
@@ -77,11 +85,9 @@ public class StorageComponent {
             saveInBatch(lemmas, lemmaRepository);
         }
 
-
-
         List<IndexDTO> indexesFromPage = extractedComponent.getIndexes(lemmasFromPage, page);
 
-        saveInBatch(indexMapstruct.toModels(indexesFromPage), indexRepository);
+        saveInBatch(indexMapstruct.toModels(indexesFromPage), indexRepository);*/
     }
 
     @Transactional
@@ -120,22 +126,6 @@ public class StorageComponent {
         lemmaRepository.saveAll(lemmas);
 
         indexRepository.deleteAllByPage(page);
-    }
-
-    private void addLemmaData(List<LemmaDTO> lemmas, List<LemmaDTO> lemmasToAdd) {
-        for (LemmaDTO lemmaToAdd : lemmasToAdd) {
-            boolean found = false;
-            for (LemmaDTO lemma : lemmas) {
-                if (lemma.isLemmaBelongToSite(lemmaToAdd)) {
-                    lemma.setFrequency(lemma.getFrequency() + lemmaToAdd.getFrequency());
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                lemmas.add(lemmaToAdd);
-            }
-        }
     }
 
     private <T, ID> void saveInBatch(List<T> entities, JpaRepository<T, ID> repository) {

@@ -16,7 +16,6 @@ public class LemmaMapper {
         return Lemma.builder()
                 .site(siteRepository.getReferenceById(lemmaDTO.getSiteDTO().getId()))
                 .frequency(lemmaDTO.getFrequency())
-                .id(lemmaDTO.getId())
                 .lemma(lemmaDTO.getLemma())
                 .build();
     }

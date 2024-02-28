@@ -1,5 +1,6 @@
 package searchengine.utils;
 
+import lombok.Getter;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -12,12 +13,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RecursiveAction;
 
 public class SiteCrawl extends RecursiveAction {
-    private static Queue<PageDTO> pageDTOQueue = new ConcurrentLinkedQueue<>();
+    @Getter
+    private final static Queue<PageDTO> pageDTOQueue = new ConcurrentLinkedQueue<>();
     private static boolean crawling = true;
-    private String rootLink;
-    private SiteDTO siteDTO;
+    private final String rootLink;
+    private final SiteDTO siteDTO;
     public static HashSet<String> hrefs = new HashSet<>();
-    private SiteConnection siteConnection;
+    private final SiteConnection siteConnection;
 
 
     public SiteCrawl(SiteDTO siteDTO, String rootLink) {
@@ -76,10 +78,6 @@ public class SiteCrawl extends RecursiveAction {
         hrefs.add(href);
         SiteCrawl task = new SiteCrawl(siteDTO, href);
         task.fork();
-    }
-
-    public static Queue<PageDTO> getPageDTOQueue() {
-        return pageDTOQueue;
     }
 
     public static void stopCrawling() {

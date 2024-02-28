@@ -22,7 +22,6 @@ import java.util.concurrent.Future;
 @RequiredArgsConstructor
 @Component
 public class SiteProcess {
-    private final SiteMapper siteMapper;
     private final SiteMapstruct siteMapstruct;
     private final SiteRepository siteRepository;
     private final StorageComponent storageComponent;

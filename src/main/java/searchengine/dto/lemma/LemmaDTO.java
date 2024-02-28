@@ -11,15 +11,12 @@ import searchengine.dto.site.SiteDTO;
 @Setter
 @RequiredArgsConstructor
 public class LemmaDTO {
-    private Integer id;
-
     private SiteDTO siteDTO;
 
     private String lemma;
 
     private int frequency;
 
-    /* todo: Дописать логику*/
     public boolean isLemmaBelongToSite(LemmaDTO lemma) {
         return this.lemma.equals(lemma.getLemma()) &&
                 this.siteDTO.getId() == lemma.getSiteDTO().getId();

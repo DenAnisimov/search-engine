@@ -6,6 +6,7 @@ import searchengine.dto.index.IndexDTO;
 import searchengine.dto.lemma.LemmaDTO;
 import searchengine.dto.page.PageDTO;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,35 +16,65 @@ import java.util.Map;
 @Component
 public class ExtractedComponent {
     private final LemmaFinderComponent lemmaFinderComponent;
-    public List<IndexDTO> getIndexes(List<LemmaDTO> lemmas, PageDTO page) {
-        List<IndexDTO> indexes = new LinkedList<>();
 
-        for (LemmaDTO lemmaToAdd : lemmas) {
-                    IndexDTO index = IndexDTO.builder()
-                            .lemmaRank(lemmaToAdd.getFrequency())
-                            .pageDTO(page)
-                            .lemmaDTO(lemmaToAdd)
+    public List<LemmaDTO> getLemmas(List<PageDTO> pages) {
+        List<LemmaDTO> lemmas = new LinkedList<>();
+        HashMap<String, Integer> lemmaFrequencyMap = new HashMap<>();
+        for (PageDTO page : pages) {
+            Map<String, Integer> pageLemmaMap = lemmaFinderComponent.main(page.getContent());
+
+            for (Map.Entry<String, Integer> entry : pageLemmaMap.entrySet()) {
+                String lemma = entry.getKey();
+                int frequency = entry.getValue();
+
+                if (lemmaFrequencyMap.containsKey(lemma)) {
+                    int newFrequency = lemmaFrequencyMap.get(lemma) + frequency;
+                    lemmaFrequencyMap.put(lemma, newFrequency);
+                } else {
+                    lemmaFrequencyMap.put(lemma, frequency);
+                    LemmaDTO lemmaDTO = LemmaDTO.builder()
+                            .siteDTO(page.getSiteDTO())
+                            .lemma(lemma)
+                            .frequency(frequency)
                             .build();
-
-                    indexes.add(index);
+                    lemmas.add(lemmaDTO);
+                }
             }
-
-        return indexes;
-    }
-
-    public List<LemmaDTO> getLemmas(PageDTO page) {
-        LinkedList<LemmaDTO> lemmas = new LinkedList<>();
-
-        for (Map.Entry<String, Integer> pageLemmas : lemmaFinderComponent.main(page.getContent()).entrySet()) {
-            LemmaDTO lemma = LemmaDTO.builder()
-                    .siteDTO(page.getSiteDTO())
-                    .lemma(pageLemmas.getKey())
-                    .frequency(pageLemmas.getValue())
-                    .build();
-
-            lemmas.add(lemma);
         }
 
         return lemmas;
+    }
+
+    public List<IndexDTO> getIndexes(List<PageDTO> pages, List<LemmaDTO> lemmas) {
+        List<IndexDTO> indexes = new LinkedList<>();
+        for (PageDTO page : pages) {
+            Map<String, Integer> pageLemmaMap = lemmaFinderComponent.main(page.getContent());
+
+            for (Map.Entry<String, Integer> entry : pageLemmaMap.entrySet()) {
+                String lemma = entry.getKey();
+                int frequency = entry.getValue();
+                LemmaDTO lemmaDTO = findLemmaDTOByLemma(lemmas, lemma);
+
+                if (lemmaDTO != null) {
+                    IndexDTO indexDTO = IndexDTO.builder()
+                            .lemmaDTO(lemmaDTO)
+                            .pageDTO(page)
+                            .lemmaRank(frequency)
+                            .build();
+
+                    indexes.add(indexDTO);
+                }
+            }
+        }
+        return indexes;
+    }
+
+    private LemmaDTO findLemmaDTOByLemma(List<LemmaDTO> lemmas, String lemma) {
+        for (LemmaDTO lemmaDTO : lemmas) {
+            if (lemmaDTO.getLemma().equals(lemma)) {
+                return lemmaDTO;
+            }
+        }
+        return null;
     }
 }

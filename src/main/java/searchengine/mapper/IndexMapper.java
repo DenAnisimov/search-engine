@@ -17,7 +17,6 @@ public class IndexMapper {
     private final SiteMapper siteMapper;
     public Index mapToEntity(IndexDTO indexDTO) {
         return Index.builder()
-                .id(indexDTO.getId())
                 .page(pageRepository.findByPath(indexDTO.getPageDTO().getPath()))
                 .lemma(lemmaRepository.findByLemmaAndSite(indexDTO.getLemmaDTO().getLemma(),
                         siteMapper.mapToEntity(indexDTO.getLemmaDTO().getSiteDTO())))

@@ -9,10 +9,7 @@ import searchengine.dto.site.SiteDTO;
 @RequiredArgsConstructor
 @Getter
 @SuperBuilder
-@ToString
 public class PageDTO {
-    private int id;
-
     private SiteDTO siteDTO;
 
     private String path;

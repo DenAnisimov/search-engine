@@ -13,7 +13,6 @@ public class PageMapper {
 
     public Page mapToEntity(PageDTO pageDTO) {
         return Page.builder()
-                .id(pageDTO.getId())
                 .path(pageDTO.getPath())
                 .code(pageDTO.getCode())
                 .site(siteRepository.getReferenceById(pageDTO.getSiteDTO().getId()))

@@ -10,8 +10,6 @@ import searchengine.dto.page.PageDTO;
 @SuperBuilder
 @RequiredArgsConstructor
 public class IndexDTO {
-    private Integer id;
-
     private PageDTO pageDTO;
 
     private LemmaDTO lemmaDTO;
