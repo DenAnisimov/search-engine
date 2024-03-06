@@ -1,28 +1,28 @@
 package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.page.PageDTO;
-import searchengine.mapper.SiteMapper;
 import searchengine.mapper.SiteMapstruct;
 import searchengine.models.Page;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 import searchengine.utils.PathUtil;
 import searchengine.utils.SiteConnection;
-import searchengine.utils.StorageComponent;
+import searchengine.utils.components.PageComponent;
+import searchengine.utils.components.StorageCleanerComponent;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PageIndexingService {
-    private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
-    private final SiteMapper siteMapper;
     private final SiteMapstruct siteMapstruct;
-    private final StorageComponent storageComponent;
+    private final PageRepository pageRepository;
+    private final PageComponent pageComponent;
+    private final StorageCleanerComponent storageCleanerComponent;
 
     public IndexingResponse indexPage(String path) {
         IndexingResponse response = new IndexingResponse();
@@ -31,6 +31,7 @@ public class PageIndexingService {
             response.setError("Ссылка отсутствует");
             return response;
         }
+        SiteConnection siteConnection = new SiteConnection(path);
         String url = PathUtil.getOriginalPath(path);
 
         if (siteRepository.findAll().stream().noneMatch(s -> s.getUrl().equals(url))) {
@@ -40,34 +41,24 @@ public class PageIndexingService {
             return response;
         }
 
-        if (getStatusCode(path) <= 400) {
-            SiteConnection siteConnection = new SiteConnection(path);
+        if (siteConnection.getStatusCode() <= 400) {
             Page page = pageRepository.findByPath(path);
             if (page != null) {
-                storageComponent.deletePage(page);
+                storageCleanerComponent.deletePage(page);
+                log.info("Транзакция удаления зокнчилась");
             }
 
             PageDTO pageDTO = PageDTO.builder()
                     .siteDTO(siteMapstruct.toDTO(siteRepository.findByUrl(url)))
-                    .code(getStatusCode(path))
+                    .code(siteConnection.getStatusCode())
                     .content(siteConnection.getDocument().text())
                     .path(path)
                     .build();
 
-            storageComponent.savePage(pageDTO);
+            pageComponent.savePage(pageDTO);
 
         }
         response.setResult(true);
         return new IndexingResponse();
-    }
-
-
-    private int getStatusCode(String path) {
-        try {
-            return Jsoup.connect(path).method(Connection.Method.GET).execute().statusCode();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
-        }
     }
 }
