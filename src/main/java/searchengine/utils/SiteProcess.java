@@ -1,17 +1,16 @@
 package searchengine.utils;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import searchengine.config.SitesList;
 import searchengine.dto.site.SiteDTO;
-import searchengine.mapper.SiteMapper;
 import searchengine.mapper.SiteMapstruct;
+import searchengine.models.Lemma;
+import searchengine.models.Page;
 import searchengine.models.Site;
-import searchengine.models.enums.Status;
-import searchengine.repository.SiteRepository;
+import searchengine.utils.components.*;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -19,36 +18,27 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class SiteProcess {
     private final SiteMapstruct siteMapstruct;
-    private final SiteRepository siteRepository;
-    private final StorageComponent storageComponent;
-    private final SitesList sites;
+    private final PageComponent pageComponent;
+    private final SiteComponent siteComponent;
+    private final LemmaComponent lemmaComponent;
+    private final IndexComponent indexComponent;
+    private final StorageCleanerComponent storageCleanerComponent;
 
     @Async
     public void start() {
-        List<searchengine.config.Site> siteList = sites.getSites();
-
-        if (siteList == null) {
-            throw new NullPointerException("Список сайтов отсутствует");
-        }
-
-        storageComponent.deleteAllData();
+        storageCleanerComponent.deleteAll();
 
         List<Future<?>> futures = new ArrayList<>();
 
-        siteList.forEach(siteConfig -> {
-            Site siteDB = new Site();
-            siteDB.setName(siteConfig.getName());
-            siteDB.setUrl(siteConfig.getUrl());
-            siteDB.setStatusTime(LocalDateTime.now());
-            siteDB.setStatus(Status.INDEXING);
+        for (Site site : siteComponent.createAndSaveSites()) {
             try {
-                siteRepository.save(siteDB);
 
-                SiteDTO siteDTO = siteMapstruct.toDTO(siteDB);
+                SiteDTO siteDTO = siteMapstruct.toDTO(site);
 
                 ExecutorService executorService = new ForkJoinPool();
                 Future<?> submit = executorService.submit(() -> {
@@ -56,15 +46,10 @@ public class SiteProcess {
                     new ForkJoinPool().invoke(siteCrawl);
                 });
                 futures.add(submit);
-
-                siteDB.setStatus(Status.INDEXED);
-                siteRepository.save(siteDB);
             } catch (Exception ex) {
-                siteDB.setLastError(ex.getMessage());
-                siteDB.setStatus(Status.FAILED);
-                siteRepository.save(siteDB);
+                siteComponent.updateSite(site, ex.getMessage());
             }
-        });
+        }
 
         for (Future<?> future : futures) {
             try {
@@ -74,8 +59,11 @@ public class SiteProcess {
             }
         }
 
-        storageComponent.saveAll(SiteCrawl.getPageDTOQueue());
+        List<Page> pages = pageComponent.save(SiteCrawl.getPageDTOQueue());
+        List<Lemma> lemmas = lemmaComponent.save(pages);
+        indexComponent.save(lemmas, pages);
     }
+
 
     public void stop() {
         SiteCrawl.stopCrawling();
