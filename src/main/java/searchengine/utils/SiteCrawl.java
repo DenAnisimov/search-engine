@@ -1,6 +1,7 @@
 package searchengine.utils;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -12,6 +13,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RecursiveAction;
 
+@Slf4j
 public class SiteCrawl extends RecursiveAction {
     @Getter
     private final static Queue<PageDTO> pageDTOQueue = new ConcurrentLinkedQueue<>();
@@ -27,6 +29,7 @@ public class SiteCrawl extends RecursiveAction {
 
         this.rootLink = rootLink;
         siteConnection = new SiteConnection(rootLink);
+        log.trace("SiteCrawl created with {} ", rootLink);
     }
 
     @Override
@@ -64,13 +67,13 @@ public class SiteCrawl extends RecursiveAction {
     }
 
     private void savePageDTOData(Document document, String path) {
-
         PageDTO pageDTO = PageDTO.builder()
                 .siteDTO(siteDTO)
                 .code(siteConnection.getStatusCode())
                 .content(document.text())
                 .path(path)
                 .build();
+        log.info("PageDTO created with {} ", pageDTO.getPath());
         pageDTOQueue.add(pageDTO);
     }
 
@@ -78,6 +81,7 @@ public class SiteCrawl extends RecursiveAction {
         hrefs.add(href);
         SiteCrawl task = new SiteCrawl(siteDTO, href);
         task.fork();
+        task.join();
     }
 
     public static void stopCrawling() {
