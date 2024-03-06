@@ -18,9 +18,10 @@ public class Lemma {
     private Integer id;
 
     @ManyToOne
+    @JoinColumn(name = "site_id", nullable = false)
     private Site site;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String lemma;
 
     @Column(nullable = false)

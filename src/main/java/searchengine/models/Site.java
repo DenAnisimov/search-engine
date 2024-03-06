@@ -24,15 +24,15 @@ public class Site {
     @Column(nullable = false)
     private Status status;
 
-    @Column(name = "status_time", nullable = false)
+    @Column(nullable = false)
     private LocalDateTime statusTime;
 
-    @Column(name = "last_error", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String lastError;
 
-    @Column(nullable = false)
+    @Column(length = 255, nullable = false)
     private String url;
 
-    @Column(nullable = false)
+    @Column(length = 255, nullable = false)
     private String name;
 }

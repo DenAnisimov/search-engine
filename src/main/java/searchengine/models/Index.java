@@ -18,6 +18,7 @@ public class Index {
     private Integer id;
 
     @ManyToOne(cascade = CascadeType.MERGE)
+    @JoinColumn(name = "page_id")
     private Page page;
 
     @ManyToOne(cascade = CascadeType.MERGE)
