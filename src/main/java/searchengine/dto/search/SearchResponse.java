@@ -9,5 +9,7 @@ public class SearchResponse {
     private boolean result;
     private String error;
     private int count;
+    private int offset;
+    private int limit;
     private List<DetailedSearchItem> data;
 }

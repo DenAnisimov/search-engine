@@ -25,7 +25,7 @@ public class SearchService {
     private final LemmaFinderComponent lemmaFinderComponent;
 
     @Transactional(readOnly = true)
-    public SearchResponse search(String search, String sitesSearch) {
+    public SearchResponse search(String search, String sitesSearch, int limit, int offset) {
         SearchResponse response = new SearchResponse();
 
         if (search.isBlank()) {
@@ -46,37 +46,44 @@ public class SearchService {
         }
 
         HashMap<Page, Double> pagesWithRelevance = getPagesWithRelativeRelevance(indexes);
+
         HashMap<Page, Double> sortedPages = sortPagesByRelevance(pagesWithRelevance);
         sortedPages.forEach((p,d) -> System.out.println(p.getPath()));
+
         response.setCount(sortedPages.size());
         response.setResult(true);
-        List<DetailedSearchItem> items = new ArrayList<>();
 
+        List<DetailedSearchItem> searchItems = new ArrayList<>();
         for (Map.Entry<Page, Double> page : sortedPages.entrySet()) {
-            String site = page.getKey().getSite().getUrl();
-            String uri = PathUtil.getPartialPath(page.getKey().getPath());
-            String title = page.getKey().getSite().getName();
-            Double relevance = page.getValue();
-
-            DetailedSearchItem item = new DetailedSearchItem();
-            item.setSite(site);
-            item.setUri(uri);
-            item.setTitle(title);
-            item.setSiteName(title);
-            for (String lemma : lemmas) {
-                String snippet = getSnippet(page.getKey().getContent(), lemma);
-                if (item.getSnippet() == null) {
-                    item.setSnippet(snippet);
-                } else {
-                    item.setSite(item.getSnippet() + " " + snippet);
-                }
-            }
-            item.setRelevance(relevance);
-            items.add(item);
+                searchItems.add(createDetailedItem(page, lemmas));
         }
-
-        response.setData(items);
+        response.setOffset(offset);
+        response.setLimit(limit);
+        response.setData(searchItems);
         return response;
+    }
+
+    private DetailedSearchItem createDetailedItem(Map.Entry<Page, Double> page, List<String> lemmas) {
+        String site = page.getKey().getSite().getUrl();
+        String uri = PathUtil.getPartialPath(page.getKey().getPath());
+        String title = page.getKey().getSite().getName();
+        Double relevance = page.getValue();
+
+        DetailedSearchItem item = new DetailedSearchItem();
+        item.setSite(site);
+        item.setUri(uri);
+        item.setTitle(title);
+        item.setSiteName(title);
+        for (String lemma : lemmas) {
+            String snippet = getSnippet(page.getKey().getContent(), lemma);
+            if (item.getSnippet() == null) {
+                item.setSnippet(snippet);
+            } else {
+                item.setSite(item.getSnippet() + " " + snippet);
+            }
+        }
+        item.setRelevance(relevance);
+        return item;
     }
 
     private String getSnippet(String content, String searchTerm) {
@@ -134,11 +141,7 @@ public class SearchService {
 
         List<Map.Entry<Page, Double>> list = new LinkedList<>(pagesWithRelevance.entrySet());
 
-        list.sort(new Comparator<Map.Entry<Page, Double>>() {
-            public int compare(Map.Entry<Page, Double> o1, Map.Entry<Page, Double> o2) {
-                return (o2.getValue()).compareTo(o1.getValue());
-            }
-        });
+        list.sort((o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
 
         HashMap<Page, Double> sortedMap = new LinkedHashMap<>();
         for (Map.Entry<Page, Double> entry : list) {
@@ -232,7 +235,7 @@ public class SearchService {
         List<String> cleanLemmas = new ArrayList<>();
         List<Index> indexesDB = indexRepository.findAll().stream().toList();
         boolean isOften = false;
-        int countOfPage = 30;
+        int countOfPage = 200;
 
         for (String lemma : lemmas) {
             int counter = 0;
