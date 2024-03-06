@@ -12,7 +12,9 @@ public interface PageMapstruct {
     @Mapping(target = "siteDTO", source = "site")
     PageDTO toDTO(Page page);
     @Mapping(target = "site", source = "siteDTO")
-    Page toModel(PageDTO pageDTO);
+    Page toEntity(PageDTO pageDTO);
 
-    List<Page> toModels(List<PageDTO> pageDTOs);
+    List<Page> toEntities(List<PageDTO> pageDTOs);
+
+    List<PageDTO> toDTOs(List<Page> pages);
 }

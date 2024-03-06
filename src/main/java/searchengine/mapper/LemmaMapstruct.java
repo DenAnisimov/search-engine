@@ -13,7 +13,9 @@ public interface LemmaMapstruct {
     LemmaDTO toDTO(Lemma lemma);
 
     @Mapping(target = "site", source = "siteDTO")
-    Lemma toModel(LemmaDTO lemmaDTO);
+    Lemma toEntity(LemmaDTO lemmaDTO);
 
-    List<Lemma> toModels(List<LemmaDTO> lemmaDTOs);
+    List<Lemma> toEntities(List<LemmaDTO> lemmaDTOs);
+
+    List<LemmaDTO> toDTOs(List<Lemma> lemma);
 }

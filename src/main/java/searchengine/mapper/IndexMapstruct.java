@@ -7,7 +7,7 @@ import searchengine.models.Index;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {PageMapstruct.class, LemmaMapstruct.class})
+@Mapper(componentModel = "spring", uses = { PageMapstruct.class, LemmaMapstruct.class })
 public interface IndexMapstruct {
     @Mapping(source = "page", target = "pageDTO")
     @Mapping(source = "lemma", target = "lemmaDTO")
@@ -15,7 +15,7 @@ public interface IndexMapstruct {
 
     @Mapping(source = "pageDTO", target = "page")
     @Mapping(source = "lemmaDTO", target = "lemma")
-    Index toModel(IndexDTO indexDTO);
+    Index toEntity(IndexDTO indexDTO);
 
-    List<Index> toModels(List<IndexDTO> indexes);
+    List<Index> toEntities(List<IndexDTO> indexes);
 }
