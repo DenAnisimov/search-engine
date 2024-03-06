@@ -10,7 +10,7 @@ import searchengine.models.Lemma;
 import searchengine.models.Page;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
-import searchengine.utils.LemmaFinderComponent;
+import searchengine.utils.components.LemmaFinderComponent;
 import searchengine.utils.PathUtil;
 
 import java.util.*;
@@ -79,7 +79,7 @@ public class SearchService {
         return response;
     }
 
-    public static String getSnippet(String content, String searchTerm) {
+    private String getSnippet(String content, String searchTerm) {
         final int CONTEXT_LENGTH = 3;
 
         StringBuilder result = new StringBuilder();
@@ -134,7 +134,7 @@ public class SearchService {
 
         List<Map.Entry<Page, Double>> list = new LinkedList<>(pagesWithRelevance.entrySet());
 
-        Collections.sort(list, new Comparator<Map.Entry<Page, Double>>() {
+        list.sort(new Comparator<Map.Entry<Page, Double>>() {
             public int compare(Map.Entry<Page, Double> o1, Map.Entry<Page, Double> o2) {
                 return (o2.getValue()).compareTo(o1.getValue());
             }
