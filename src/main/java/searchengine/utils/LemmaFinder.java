@@ -1,22 +1,21 @@
-package searchengine.utils.components;
+package searchengine.utils;
 
-import lombok.RequiredArgsConstructor;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
-@RequiredArgsConstructor
-public class LemmaFinderComponent {
+public class LemmaFinder {
     private static final String WORD_REGEX = "[а-яА-Я]+";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
 
-    public HashMap<String, Integer> main(String text) {
+    public static HashMap<String, Integer> main(String text) {
         List<String> words = splitTextIntoWords(text);
         HashMap<String, Integer> lemmas = new HashMap<>();
         try {
@@ -51,15 +50,15 @@ public class LemmaFinderComponent {
         return lemmas;
     }
 
-    private boolean anyWordContainsParticle(List<String> wordBaseForm) {
-        return wordBaseForm.stream().anyMatch(this::hasParticleProperty);
+    private static boolean anyWordContainsParticle(List<String> wordBaseForm) {
+        return wordBaseForm.stream().anyMatch(LemmaFinder::hasParticleProperty);
     }
 
-    private boolean hasParticleProperty(String wordBase) {
+    private static boolean hasParticleProperty(String wordBase) {
         return Arrays.stream(particlesNames).anyMatch(wordBase::contains);
     }
 
-    private List<String> splitTextIntoWords(String text) {
+    private static List<String> splitTextIntoWords(String text) {
         text = text.trim();
         List<String> words = new ArrayList<>();
         Pattern pattern = Pattern.compile(WORD_REGEX);

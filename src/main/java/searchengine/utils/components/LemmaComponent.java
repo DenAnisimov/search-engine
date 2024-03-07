@@ -1,21 +1,18 @@
 package searchengine.utils.components;
 
-import com.mysql.cj.x.protobuf.MysqlxCrud;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import searchengine.dto.lemma.LemmaDTO;
-import searchengine.mapper.LemmaMapstruct;
 import searchengine.models.Lemma;
 import searchengine.models.Page;
 import searchengine.repository.LemmaRepository;
+import searchengine.utils.LemmaFinder;
 
 import java.util.*;
 
 @Component
 @RequiredArgsConstructor
 public class LemmaComponent {
-    private final LemmaFinderComponent lemmaFinderComponent;
     private final LemmaRepository lemmaRepository;
     private final BatchEntitySaver batchEntitySaver;
 
@@ -28,7 +25,7 @@ public class LemmaComponent {
         List<Lemma> lemmas = new LinkedList<>();
 
         for (Page page : pages) {
-            Map<String, Integer> pageLemmaMap = lemmaFinderComponent.main(page.getContent());
+            Map<String, Integer> pageLemmaMap = LemmaFinder.main(page.getContent());
 
             for (Map.Entry<String, Integer> entry : pageLemmaMap.entrySet()) {
                 String lemmaText = entry.getKey();

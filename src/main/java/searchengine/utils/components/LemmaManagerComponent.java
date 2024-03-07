@@ -6,6 +6,7 @@ import searchengine.models.Index;
 import searchengine.models.Lemma;
 import searchengine.repository.IndexRepository;
 import searchengine.repository.LemmaRepository;
+import searchengine.utils.LemmaFinder;
 
 import java.util.*;
 
@@ -14,10 +15,9 @@ import java.util.*;
 public class LemmaManagerComponent {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
-    private final LemmaFinderComponent lemmaFinderComponent;
 
     public List<String> getSortedAndFilteredLemmas(String search) {
-        List<String> lemmas = new ArrayList<>(lemmaFinderComponent.main(search).keySet());
+        List<String> lemmas = new ArrayList<>(LemmaFinder.main(search).keySet());
 
         sortLemmasByFrequency(lemmas);
         filterLemmasByFrequency(lemmas);
