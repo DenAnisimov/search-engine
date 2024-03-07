@@ -2,6 +2,8 @@ package searchengine.utils.components;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import searchengine.dto.page.PageWithRelevance;
+import searchengine.dto.page.PageWithRelevanceComparator;
 import searchengine.models.Index;
 import searchengine.models.Page;
 
@@ -11,57 +13,64 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PageRankerComponent {
 
-    public HashMap<Page, Double> getPagesSortedByRelevance(List<Index> indexes) {
-        HashMap<Page, Double> pagesWithRelevance = getPagesWithRelativeRelevance(indexes);
+    public List<PageWithRelevance> getPagesSortedByRelevance(List<Index> indexes) {
+        List<PageWithRelevance> pagesWithRelevance = getPagesWithRelativeRelevance(indexes);
 
-        return sortPagesByRelevance(pagesWithRelevance);
+        sortPagesByRelevance(pagesWithRelevance);
+
+        return pagesWithRelevance;
     }
 
-    private HashMap<Page, Double> sortPagesByRelevance(HashMap<Page, Double> pagesWithRelevance) {
-
-        List<Map.Entry<Page, Double>> list = new LinkedList<>(pagesWithRelevance.entrySet());
-
-        list.sort((o1, o2) -> (o2.getValue()).compareTo(o1.getValue()));
-
-        HashMap<Page, Double> sortedMap = new LinkedHashMap<>();
-        for (Map.Entry<Page, Double> entry : list) {
-            sortedMap.put(entry.getKey(), entry.getValue());
-        }
-
-        return sortedMap;
+    private void sortPagesByRelevance(List<PageWithRelevance> pagesWithRelevance) {
+        pagesWithRelevance.sort(new PageWithRelevanceComparator());
     }
 
-    private HashMap<Page, Double> getPagesWithRelativeRelevance(List<Index> indexes) {
-        HashMap<Page, Double> pagesWithRelevance = new HashMap<>();
-        HashMap<Page, Integer> pagesWithAbsoluteRelevance = getPagesWithAbsoluteRelevance(indexes);
+    private List<PageWithRelevance> getPagesWithRelativeRelevance(List<Index> indexes) {
+        List<PageWithRelevance> pagesWithRelevance = new ArrayList<>();
+        List<PageWithRelevance> pagesWithAbsoluteRelevance = getPagesWithAbsoluteRelevance(indexes);
         double maxRelevance = 0.0;
 
-        for (Map.Entry<Page, Integer> pageWithAbsoluteRelevance : pagesWithAbsoluteRelevance.entrySet()) {
-            if (maxRelevance < pageWithAbsoluteRelevance.getValue()) {
-                maxRelevance = pageWithAbsoluteRelevance.getValue();
+        for (PageWithRelevance pageWithAbsoluteRelevance : pagesWithAbsoluteRelevance) {
+            if (maxRelevance < pageWithAbsoluteRelevance.getRelevance()) {
+                maxRelevance = pageWithAbsoluteRelevance.getRelevance();
             }
         }
 
-        for (Map.Entry<Page, Integer> pageWithAbsoluteRelevance : pagesWithAbsoluteRelevance.entrySet()) {
-            double relativeRelevance = pageWithAbsoluteRelevance.getValue() / maxRelevance;
-            pagesWithRelevance.put(pageWithAbsoluteRelevance.getKey(), relativeRelevance);
+        for (PageWithRelevance pageWithAbsoluteRelevance : pagesWithAbsoluteRelevance) {
+            double relativeRelevance = pageWithAbsoluteRelevance.getRelevance() / maxRelevance;
+
+            PageWithRelevance pageWithRelevance = new PageWithRelevance();
+            pageWithRelevance.setPage(pageWithAbsoluteRelevance.getPage());
+            pageWithRelevance.setRelevance(relativeRelevance);
+
+            pagesWithRelevance.add(pageWithRelevance);
         }
 
         return pagesWithRelevance;
     }
 
-    private HashMap<Page, Integer> getPagesWithAbsoluteRelevance(List<Index> indexes) {
-        HashMap<Page, Integer> pagesWithRelevance = new HashMap<>();
+    private List<PageWithRelevance> getPagesWithAbsoluteRelevance(List<Index> indexes) {
+        List<PageWithRelevance> pagesWithRelevance = new ArrayList<>();
 
         for (Index index : indexes) {
             int lemmaRank = (int) index.getLemmaRank();
             Page page = index.getPage();
 
-            if (!pagesWithRelevance.containsKey(index)) {
-                pagesWithRelevance.put(page, lemmaRank);
+            PageWithRelevance pageWithRelevance = new PageWithRelevance();
+
+            if (!PageWithRelevance.containsPage(pagesWithRelevance, page)) {
+                pageWithRelevance.setPage(page);
+                pageWithRelevance.setRelevance((double) lemmaRank);
+
+                pagesWithRelevance.add(pageWithRelevance);
             } else {
-                lemmaRank += pagesWithRelevance.get(index);
-                pagesWithRelevance.put(page, lemmaRank);
+                int indexOfPage = PageWithRelevance.getIndex(pagesWithRelevance, page);
+
+                pageWithRelevance.setPage(page);
+                lemmaRank += pagesWithRelevance.get(indexOfPage).getRelevance();
+                pageWithRelevance.setRelevance((double) lemmaRank);
+
+                pagesWithRelevance.set(indexOfPage, pageWithRelevance);
             }
         }
 
